@@ -12,6 +12,7 @@ class ChatApp {
     this.attachEventListeners();
     this.loadChatHistory();
     this.loadMcpServers();
+    this.initializeMcpIntegration();  
     this.initializeWelcomeMessage();
   }
 
@@ -66,6 +67,19 @@ class ChatApp {
     this.iconPreview = document.getElementById('iconPreview');
   }
 
+  initializeMcpIntegration() {
+    if (window.electron) {
+        // Load MCP servers from main process (if stored there)
+        window.electron.getMcpServers?.().then((servers) => {
+            if (servers && Array.isArray(servers)) {
+                this.mcpServers = servers;
+                this.saveMcpServersToStorage();
+            }
+            this.renderMcpServers();
+        }).catch(err => console.error("Error loading MCP servers from main:", err));
+    }
+}
+
   attachEventListeners() {
     // Input events
     this.messageInput.addEventListener('input', () => this.handleInputChange());
@@ -76,6 +90,8 @@ class ChatApp {
     this.sidebarToggle.addEventListener('click', () => this.toggleSidebar());
     this.newChatBtn.addEventListener('click', () => this.startNewChat());
     this.clearBtn.addEventListener('click', () => this.clearChat());
+    this.deleteAllChatsBtn = document.getElementById('deleteAllChatsBtn');
+    this.deleteAllChatsBtn.addEventListener('click', () => this.deleteAllChats());
     this.exportBtn.addEventListener('click', () => this.exportChat());
     this.settingsBtn.addEventListener('click', () => this.openSettings());
     
@@ -221,7 +237,13 @@ class ChatApp {
   async getBotResponse(userMessage) {
     try {
       // Call Electron IPC to send message to backend
-      const response = await window.electron.sendMessage(userMessage, this.currentSessionId);
+      const activeServer = this.mcpServers[0] || null;   // or allow UI to select server later
+
+const response = await window.electron.sendMessage({
+    text: userMessage,
+    sessionId: this.currentSessionId,
+    mcpServer: activeServer?.url || null
+});
       
       console.log('=== BOT RESPONSE DEBUG ===');
       console.log('User message:', userMessage);
@@ -495,6 +517,20 @@ class ChatApp {
       }
   }
 
+    deleteAllChats() {
+    if (confirm('Delete ALL chats? This cannot be undone.')) {
+      this.chatHistory = [];
+      this.saveChatHistory();
+      this.messages = [];
+      this.messagesArea.innerHTML = '';
+      this.currentSessionId = this.generateSessionId();
+      this.welcomeScreen.style.display = 'flex';
+      this.messagesArea.classList.remove('active');
+      this.initializeWelcomeMessage();
+      this.renderChatHistory();
+    }
+  }
+
   exportChat() {
     if (this.messages.length <= 1) {
       alert('No messages to export');
@@ -539,11 +575,26 @@ class ChatApp {
     });
   }
 
-  saveSettings() {
-    // Sync MCP servers to the MCP client
-    this.syncMcpServersToClient();
+saveSettings() {
+    // Save locally
+    this.saveMcpServersToStorage();
+
+    // Send to Electron → main → MCP client
+    if (window.electron) {
+        window.electron.saveMcpServers(this.mcpServers)
+            .catch(err => console.error("Failed to send MCP servers:", err));
+    }
+
     this.closeSettingsModal();
-  }
+}
+
+syncMcpServersToClient() {
+    if (!window.electron) return;
+
+    window.electron.saveMcpServers(this.mcpServers)
+        .then(() => console.log("MCP servers synced to main"))
+        .catch(err => console.error("Failed syncing MCP servers:", err));
+}
 
   // MCP Server Management
   loadMcpServers() {
