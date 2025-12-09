@@ -713,7 +713,6 @@ class ChatApp {
     const mcpConfig = {
       mcpServers: {}
     };
-    
     this.mcpServers.forEach(server => {
       const serverKey = server.name.toLowerCase().replace(/\s+/g, '-');
       mcpConfig.mcpServers[serverKey] = {
@@ -722,25 +721,24 @@ class ChatApp {
         description: server.description
       };
     });
-    
-    // Save to localStorage for now
+    // Save to localStorage for UI use
     localStorage.setItem('mcpClientConfig', JSON.stringify(mcpConfig));
     console.log('MCP servers synced:', mcpConfig);
-    
-    // TODO: In production, call the MCP client API to update configuration
-    // Example: 
-    // try {
-    //   const response = await fetch('http://localhost:8085/api/config', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(mcpConfig)
-    //   });
-    //   if (response.ok) {
-    //     alert('MCP servers synchronized successfully!');
-    //   }
-    // } catch (error) {
-    //   console.error('Failed to sync MCP servers:', error);
-    // }
+    // Call MCP client API to update config
+    try {
+      const response = await fetch('http://localhost:8085/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mcpConfig)
+      });
+      if (response.ok) {
+        console.log('MCP servers synchronized via client API!');
+      } else {
+        console.error('Failed to sync MCP servers via client API:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Failed to sync MCP servers via client API:', error);
+    }
   }
 
   escapeHtml(text) {
