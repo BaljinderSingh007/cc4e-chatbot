@@ -237,13 +237,8 @@ class ChatApp {
   async getBotResponse(userMessage) {
     try {
       // Call Electron IPC to send message to backend
-      const activeServer = this.mcpServers[0] || null;   // or allow UI to select server later
-
-const response = await window.electron.sendMessage({
-    text: userMessage,
-    sessionId: this.currentSessionId,
-    mcpServer: activeServer?.url || null
-});
+      // Only send the message string and sessionId as expected by main.js
+      const response = await window.electron.sendMessage(userMessage, this.currentSessionId);
       
       console.log('=== BOT RESPONSE DEBUG ===');
       console.log('User message:', userMessage);
