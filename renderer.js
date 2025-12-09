@@ -6,10 +6,12 @@ class ChatApp {
     this.chatHistory = [];
     this.isTyping = false;
     this.currentAction = null;
+    this.mcpServers = [];
     
     this.initializeElements();
     this.attachEventListeners();
     this.loadChatHistory();
+    this.loadMcpServers();
     this.initializeWelcomeMessage();
   }
 
@@ -40,6 +42,28 @@ class ChatApp {
     this.modalClose = document.getElementById('modalClose');
     this.modalCancel = document.getElementById('modalCancel');
     this.modalSubmit = document.getElementById('modalSubmit');
+    
+    // Settings modal elements
+    this.settingsModal = document.getElementById('settingsModal');
+    this.settingsModalClose = document.getElementById('settingsModalClose');
+    this.settingsModalCancel = document.getElementById('settingsModalCancel');
+    this.settingsModalSave = document.getElementById('settingsModalSave');
+    this.mcpServersList = document.getElementById('mcpServersList');
+    this.addMcpServerBtn = document.getElementById('addMcpServerBtn');
+    
+    // MCP Server modal elements
+    this.mcpServerModal = document.getElementById('mcpServerModal');
+    this.mcpServerModalTitle = document.getElementById('mcpServerModalTitle');
+    this.mcpServerModalClose = document.getElementById('mcpServerModalClose');
+    this.mcpServerModalCancel = document.getElementById('mcpServerModalCancel');
+    this.mcpServerModalSave = document.getElementById('mcpServerModalSave');
+    this.mcpServerId = document.getElementById('mcpServerId');
+    this.mcpServerIcon = document.getElementById('mcpServerIcon');
+    this.mcpServerName = document.getElementById('mcpServerName');
+    this.mcpServerDescription = document.getElementById('mcpServerDescription');
+    this.mcpServerUrl = document.getElementById('mcpServerUrl');
+    this.iconUploadArea = document.getElementById('iconUploadArea');
+    this.iconPreview = document.getElementById('iconPreview');
   }
 
   attachEventListeners() {
@@ -85,6 +109,27 @@ class ChatApp {
     
     // Auto-resize textarea
     this.messageInput.addEventListener('input', () => this.autoResizeTextarea());
+    
+    // Settings modal events
+    this.settingsModalClose.addEventListener('click', () => this.closeSettingsModal());
+    this.settingsModalCancel.addEventListener('click', () => this.closeSettingsModal());
+    this.settingsModalSave.addEventListener('click', () => this.saveSettings());
+    
+    // Settings tabs
+    const settingsTabs = document.querySelectorAll('.settings-tab');
+    settingsTabs.forEach(tab => {
+      tab.addEventListener('click', () => this.switchSettingsTab(tab.dataset.tab));
+    });
+    
+    // MCP Server modal events
+    this.addMcpServerBtn.addEventListener('click', () => this.openMcpServerModal());
+    this.mcpServerModalClose.addEventListener('click', () => this.closeMcpServerModal());
+    this.mcpServerModalCancel.addEventListener('click', () => this.closeMcpServerModal());
+    this.mcpServerModalSave.addEventListener('click', () => this.saveMcpServer());
+    
+    // Icon upload
+    this.iconUploadArea.addEventListener('click', () => this.mcpServerIcon.click());
+    this.mcpServerIcon.addEventListener('change', (e) => this.handleIconUpload(e));
   }
 
   initializeWelcomeMessage() {
@@ -337,7 +382,8 @@ class ChatApp {
         this.sendMessage('Show me all projects');
         break;
       case 'contracts':
-        this.sendMessage('Show me all contracts');
+        this.currentAction = 'contracts-by-project';
+        this.openModal('Enter Project ID', 'Enter the project ID to get contracts');
         break;
       case 'project-id':
         this.currentAction = 'project-id';
@@ -374,6 +420,8 @@ class ChatApp {
       this.sendMessage(`Show me project with ID ${value}`);
     } else if (this.currentAction === 'contract-id') {
       this.sendMessage(`Show me contract with ID ${value}`);
+    } else if (this.currentAction === 'contracts-by-project') {
+      this.sendMessage(`show contracts for project ${value}`);
     }
 
     this.closeModal();
@@ -386,6 +434,9 @@ class ChatApp {
   startNewChat() {
     // Check if current chat already has messages
     const hasMessages = this.messages.length > 1;
+    
+    // Reset typing state
+    this.isTyping = false;
     
     // Only create new chat if current chat has messages or is not already new
     if (hasMessages) {
@@ -401,10 +452,16 @@ class ChatApp {
       this.welcomeScreen.style.display = 'flex';
       this.messagesArea.classList.remove('active');
     }
+    
+    // Re-enable input field
+    this.handleInputChange();
   }
 
   async clearChat() {
     if (this.messages.length <= 1) return;
+
+      // Reset typing state
+      this.isTyping = false;
 
       try {
         if (window.electron) {
@@ -418,6 +475,11 @@ class ChatApp {
         this.currentSessionId = this.generateSessionId();
         this.welcomeScreen.style.display = 'flex';
         this.messagesArea.classList.remove('active');
+        this.initializeWelcomeMessage();
+        this.renderChatHistory();
+        
+        // Re-enable input field
+        this.handleInputChange();
         this.initializeWelcomeMessage();
         this.renderChatHistory();
       } catch (error) {
@@ -457,7 +519,234 @@ class ChatApp {
   }
 
   openSettings() {
-    alert('Settings panel coming soon!\n\nFeatures:\n- API Configuration\n- Theme Settings\n- Export/Import Preferences\n- Keyboard Shortcuts');
+    this.settingsModal.classList.add('active');
+    this.renderMcpServers();
+  }
+
+  closeSettingsModal() {
+    this.settingsModal.classList.remove('active');
+  }
+
+  switchSettingsTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+    
+    // Update panels
+    document.querySelectorAll('.settings-panel').forEach(panel => {
+      panel.classList.toggle('active', panel.id === `${tabName}-panel`);
+    });
+  }
+
+  saveSettings() {
+    // Sync MCP servers to the MCP client
+    this.syncMcpServersToClient();
+    this.closeSettingsModal();
+  }
+
+  // MCP Server Management
+  loadMcpServers() {
+    try {
+      const saved = localStorage.getItem('mcpServers');
+      if (saved) {
+        this.mcpServers = JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error('Error loading MCP servers:', error);
+      this.mcpServers = [];
+    }
+  }
+
+  saveMcpServersToStorage() {
+    try {
+      localStorage.setItem('mcpServers', JSON.stringify(this.mcpServers));
+    } catch (error) {
+      console.error('Error saving MCP servers:', error);
+    }
+  }
+
+  renderMcpServers() {
+    this.mcpServersList.innerHTML = '';
+    
+    if (this.mcpServers.length === 0) {
+      this.mcpServersList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No MCP servers configured yet. Click "Add MCP Server" to get started.</p>';
+      return;
+    }
+    
+    this.mcpServers.forEach(server => {
+      const card = document.createElement('div');
+      card.className = 'mcp-server-card';
+      
+      const iconHtml = server.icon 
+        ? `<img src="${server.icon}" alt="${server.name}">`
+        : `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+             <circle cx="8.5" cy="8.5" r="1.5"/>
+             <polyline points="21 15 16 10 5 21"/>
+           </svg>`;
+      
+      card.innerHTML = `
+        <div class="mcp-server-icon">${iconHtml}</div>
+        <div class="mcp-server-info">
+          <div class="mcp-server-name">${this.escapeHtml(server.name)}</div>
+          ${server.description ? `<div class="mcp-server-description">${this.escapeHtml(server.description)}</div>` : ''}
+          <div class="mcp-server-url">${this.escapeHtml(server.url)}</div>
+        </div>
+        <div class="mcp-server-actions">
+          <button class="mcp-server-action-btn edit" data-id="${server.id}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+          <button class="mcp-server-action-btn delete" data-id="${server.id}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+        </div>
+      `;
+      
+      // Add event listeners
+      card.querySelector('.edit').addEventListener('click', () => this.editMcpServer(server.id));
+      card.querySelector('.delete').addEventListener('click', () => this.deleteMcpServer(server.id));
+      
+      this.mcpServersList.appendChild(card);
+    });
+  }
+
+  openMcpServerModal(serverId = null) {
+    if (serverId) {
+      const server = this.mcpServers.find(s => s.id === serverId);
+      if (server) {
+        this.mcpServerModalTitle.textContent = 'Edit MCP Server';
+        this.mcpServerId.value = server.id;
+        this.mcpServerName.value = server.name;
+        this.mcpServerDescription.value = server.description || '';
+        this.mcpServerUrl.value = server.url;
+        
+        if (server.icon) {
+          this.iconPreview.innerHTML = `<img src="${server.icon}" alt="Icon preview">`;
+        }
+      }
+    } else {
+      this.mcpServerModalTitle.textContent = 'Add MCP Server';
+      this.mcpServerId.value = '';
+      this.mcpServerName.value = '';
+      this.mcpServerDescription.value = '';
+      this.mcpServerUrl.value = '';
+      this.iconPreview.innerHTML = `
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <p>Click to upload icon</p>
+        <small>Minimum size: 128 x 128 px</small>
+      `;
+    }
+    
+    this.mcpServerModal.classList.add('active');
+  }
+
+  closeMcpServerModal() {
+    this.mcpServerModal.classList.remove('active');
+  }
+
+  handleIconUpload(event) {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.iconPreview.innerHTML = `<img src="${e.target.result}" alt="Icon preview">`;
+        this.iconPreview.dataset.icon = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  saveMcpServer() {
+    const name = this.mcpServerName.value.trim();
+    const url = this.mcpServerUrl.value.trim();
+    
+    if (!name || !url) {
+      alert('Please fill in all required fields (Name and URL)');
+      return;
+    }
+    
+    const server = {
+      id: this.mcpServerId.value || this.generateId(),
+      name: name,
+      description: this.mcpServerDescription.value.trim(),
+      url: url,
+      icon: this.iconPreview.dataset.icon || null
+    };
+    
+    const existingIndex = this.mcpServers.findIndex(s => s.id === server.id);
+    if (existingIndex >= 0) {
+      this.mcpServers[existingIndex] = server;
+    } else {
+      this.mcpServers.push(server);
+    }
+    
+    this.saveMcpServersToStorage();
+    this.renderMcpServers();
+    this.closeMcpServerModal();
+  }
+
+  editMcpServer(serverId) {
+    this.openMcpServerModal(serverId);
+  }
+
+  deleteMcpServer(serverId) {
+    if (confirm('Are you sure you want to delete this MCP server?')) {
+      this.mcpServers = this.mcpServers.filter(s => s.id !== serverId);
+      this.saveMcpServersToStorage();
+      this.renderMcpServers();
+    }
+  }
+
+  async syncMcpServersToClient() {
+    // Convert chatbot MCP servers to MCP client config format
+    const mcpConfig = {
+      mcpServers: {}
+    };
+    
+    this.mcpServers.forEach(server => {
+      const serverKey = server.name.toLowerCase().replace(/\s+/g, '-');
+      mcpConfig.mcpServers[serverKey] = {
+        url: server.url,
+        name: server.name,
+        description: server.description
+      };
+    });
+    
+    // Save to localStorage for now
+    localStorage.setItem('mcpClientConfig', JSON.stringify(mcpConfig));
+    console.log('MCP servers synced:', mcpConfig);
+    
+    // TODO: In production, call the MCP client API to update configuration
+    // Example: 
+    // try {
+    //   const response = await fetch('http://localhost:8085/api/config', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify(mcpConfig)
+    //   });
+    //   if (response.ok) {
+    //     alert('MCP servers synchronized successfully!');
+    //   }
+    // } catch (error) {
+    //   console.error('Failed to sync MCP servers:', error);
+    // }
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   updateChatHistory() {
@@ -605,10 +894,11 @@ class ChatApp {
   }
 
   formatTime(timestamp) {
+    const date = new Date(timestamp);
     return new Intl.DateTimeFormat('en-US', {
       hour: '2-digit',
       minute: '2-digit'
-    }).format(timestamp);
+    }).format(date);
   }
 
   generateSessionId() {

@@ -189,6 +189,122 @@
     </div>
   </div>
 
+  <!-- Settings Modal -->
+  <div class="modal" id="settingsModal">
+    <div class="modal-content settings-modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close" id="settingsModalClose">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body settings-body">
+        <div class="settings-tabs">
+          <button class="settings-tab active" data-tab="mcp-servers">MCP Servers</button>
+          <button class="settings-tab" data-tab="general">General</button>
+        </div>
+        
+        <div class="settings-content">
+          <!-- MCP Servers Tab -->
+          <div class="settings-panel active" id="mcp-servers-panel">
+            <div class="settings-section">
+              <h3>MCP Server Configuration</h3>
+              <p class="settings-description">Configure Model Context Protocol servers to extend chatbot capabilities</p>
+              
+              <div class="mcp-servers-list" id="mcpServersList">
+                <!-- Servers will be dynamically added here -->
+              </div>
+              
+              <button class="btn btn-primary" id="addMcpServerBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Add MCP Server
+              </button>
+            </div>
+          </div>
+
+          <!-- General Tab -->
+          <div class="settings-panel" id="general-panel">
+            <div class="settings-section">
+              <h3>General Settings</h3>
+              <p class="settings-description">Configure general application settings</p>
+              
+              <div class="setting-item">
+                <label>Theme</label>
+                <select class="setting-select" id="themeSelect">
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                  <option value="system">System</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="settingsModalCancel">Cancel</button>
+        <button class="btn btn-primary" id="settingsModalSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MCP Server Configuration Modal -->
+  <div class="modal" id="mcpServerModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="mcpServerModalTitle">Add MCP Server</h2>
+        <button class="modal-close" id="mcpServerModalClose">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body mcp-server-form">
+        <div class="form-group">
+          <label for="mcpServerIcon">Icon (optional)</label>
+          <div class="icon-upload-area" id="iconUploadArea">
+            <input type="file" id="mcpServerIcon" accept="image/*" style="display: none;">
+            <div class="icon-preview" id="iconPreview">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <p>Click to upload icon</p>
+              <small>Minimum size: 128 x 128 px</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="mcpServerName">Name *</label>
+          <input type="text" id="mcpServerName" class="form-input" placeholder="Custom Tool" required>
+        </div>
+
+        <div class="form-group">
+          <label for="mcpServerDescription">Description (optional)</label>
+          <textarea id="mcpServerDescription" class="form-textarea" placeholder="Explain what it does in a few words" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="mcpServerUrl">MCP Server URL *</label>
+          <input type="url" id="mcpServerUrl" class="form-input" placeholder="http://localhost:8085" required>
+        </div>
+
+        <input type="hidden" id="mcpServerId">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="mcpServerModalCancel">Cancel</button>
+        <button class="btn btn-primary" id="mcpServerModalSave">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
 </body>
 </html>

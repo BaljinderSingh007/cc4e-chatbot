@@ -3,7 +3,7 @@ const axios = require('axios');
 class ChatService {
   constructor() {
     this.apiEndpoint = 'http://localhost:8085/api/chat';
-    this.requestTimeout = 60000; // Allow up to 60 seconds for MCP tool + LLM formatting
+    this.requestTimeout = 120000; // 120 seconds (2 minutes) to handle slow backend responses
   }
 
   /**

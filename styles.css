@@ -742,3 +742,293 @@ body {
     max-width: 85%;
   }
 }
+
+/* Settings Modal Styles */
+.settings-modal-content {
+  width: 800px;
+  max-width: 90vw;
+  max-height: 85vh;
+}
+
+.settings-body {
+  padding: 0;
+  display: flex;
+  min-height: 400px;
+}
+
+.settings-tabs {
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  min-width: 180px;
+  padding: 16px 0;
+}
+
+.settings-tab {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.settings-tab:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.settings-tab.active {
+  color: var(--primary-color);
+  background: var(--surface);
+  border-left-color: var(--primary-color);
+}
+
+.settings-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.settings-panel {
+  display: none;
+  padding: 24px;
+}
+
+.settings-panel.active {
+  display: block;
+}
+
+.settings-section {
+  margin-bottom: 32px;
+}
+
+.settings-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.settings-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.setting-item {
+  margin-bottom: 20px;
+}
+
+.setting-item label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.setting-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--input-border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.setting-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* MCP Servers List */
+.mcp-servers-list {
+  margin-bottom: 20px;
+}
+
+.mcp-server-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--surface);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.mcp-server-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow);
+}
+
+.mcp-server-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: var(--sidebar-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.mcp-server-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mcp-server-icon svg {
+  color: var(--text-secondary);
+}
+
+.mcp-server-info {
+  flex: 1;
+}
+
+.mcp-server-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.mcp-server-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.mcp-server-url {
+  font-size: 12px;
+  color: var(--primary-color);
+  font-family: monospace;
+}
+
+.mcp-server-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mcp-server-action-btn {
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.mcp-server-action-btn:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.mcp-server-action-btn.delete:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* MCP Server Form */
+.mcp-server-form {
+  padding: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--input-border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.icon-upload-area {
+  border: 2px dashed var(--input-border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-upload-area:hover {
+  border-color: var(--primary-color);
+  background: var(--hover-bg);
+}
+
+.icon-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-preview svg {
+  color: var(--text-secondary);
+}
+
+.icon-preview p {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.icon-preview small {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.icon-preview img {
+  width: 128px;
+  height: 128px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.btn svg {
+  vertical-align: middle;
+  margin-right: 6px;
+}
