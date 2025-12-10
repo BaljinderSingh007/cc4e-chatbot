@@ -571,25 +571,42 @@ class ChatApp {
   }
 
 saveSettings() {
-    // Save locally
-    this.saveMcpServersToStorage();
+  // Save locally
+  this.saveMcpServersToStorage();
+  // Sync config to backend (no restart needed)
+  this.syncMcpServersToClient();
+  this.closeSettingsModal();
+}
 
-    // Send to Electron → main → MCP client
-    if (window.electron) {
-        window.electron.saveMcpServers(this.mcpServers)
-            .catch(err => console.error("Failed to send MCP servers:", err));
+  async syncMcpServersToClient() {
+    // Convert chatbot MCP servers to MCP client config format
+    const mcpConfig = { mcpServers: {} };
+    this.mcpServers.forEach(server => {
+      const serverKey = server.name.toLowerCase().replace(/\s+/g, '-');
+      mcpConfig.mcpServers[serverKey] = {
+        url: server.url,
+        name: server.name,
+        description: server.description
+      };
+    });
+    // Save to localStorage for UI use
+    localStorage.setItem('mcpClientConfig', JSON.stringify(mcpConfig));
+    // POST to backend
+    try {
+      const response = await fetch('http://localhost:8085/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mcpConfig)
+      });
+      if (response.ok) {
+        console.log('MCP servers synchronized via client API!');
+      } else {
+        console.error('Failed to sync MCP servers via client API:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Failed to sync MCP servers via client API:', error);
     }
-
-    this.closeSettingsModal();
-}
-
-syncMcpServersToClient() {
-    if (!window.electron) return;
-
-    window.electron.saveMcpServers(this.mcpServers)
-        .then(() => console.log("MCP servers synced to main"))
-        .catch(err => console.error("Failed syncing MCP servers:", err));
-}
+  }
 
   // MCP Server Management
   loadMcpServers() {
