@@ -251,12 +251,22 @@ class ChatApp {
       this.hideTypingIndicator();
 
       if (response.success) {
-        const botMessage = {
-          id: this.generateId(),
-          text: response.response,
-          sender: 'bot',
-          timestamp: new Date()
-        };
+        let formattedText;
+
+if (typeof response.response === 'object') {
+  // Pretty-print JSON for the chat bubble
+  formattedText = JSON.stringify(response.response, null, 2);
+} else {
+  formattedText = response.response;
+}
+
+const botMessage = {
+  id: this.generateId(),
+  text: formattedText,
+  sender: 'bot',
+  timestamp: new Date()
+};
+
         this.messages.push(botMessage);
         this.displayMessage(botMessage);
       } else {
