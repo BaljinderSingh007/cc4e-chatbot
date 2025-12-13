@@ -153,7 +153,9 @@ class ChatApp {
       id: this.generateId(),
       text: 'Hello! How can I help you today? You can ask me about projects, contracts, or use the quick actions below.',
       sender: 'bot',
-      timestamp: new Date()
+      timestamp: new Date(),
+      contentType: 'text',
+      segments: [{ type: 'text', content: 'Hello! How can I help you today? You can ask me about projects, contracts, or use the quick actions below.' }]
     };
     this.messages.push(welcomeMsg);
   }
@@ -251,21 +253,16 @@ class ChatApp {
       this.hideTypingIndicator();
 
       if (response.success) {
-        let formattedText;
+        const { formattedText, contentType, segments } = this.prepareBotResponseContent(response.response);
 
-if (typeof response.response === 'object') {
-  // Pretty-print JSON for the chat bubble
-  formattedText = JSON.stringify(response.response, null, 2);
-} else {
-  formattedText = response.response;
-}
-
-const botMessage = {
-  id: this.generateId(),
-  text: formattedText,
-  sender: 'bot',
-  timestamp: new Date()
-};
+        const botMessage = {
+          id: this.generateId(),
+          text: formattedText,
+          sender: 'bot',
+          timestamp: new Date(),
+          contentType,
+          segments
+        };
 
         this.messages.push(botMessage);
         this.displayMessage(botMessage);
@@ -276,7 +273,9 @@ const botMessage = {
           id: this.generateId(),
           text: fallbackResponse,
           sender: 'bot',
-          timestamp: new Date()
+          timestamp: new Date(),
+          contentType: 'text',
+          segments: [{ type: 'text', content: fallbackResponse }]
         };
         this.messages.push(botMessage);
         this.displayMessage(botMessage);
@@ -289,10 +288,105 @@ const botMessage = {
         id: this.generateId(),
         text: fallbackResponse,
         sender: 'bot',
-        timestamp: new Date()
+        timestamp: new Date(),
+        contentType: 'text',
+        segments: [{ type: 'text', content: fallbackResponse }]
       };
       this.messages.push(botMessage);
       this.displayMessage(botMessage);
+    }
+  }
+
+  prepareBotResponseContent(serverResponse) {
+    if (serverResponse === null || serverResponse === undefined) {
+      return {
+        formattedText: '',
+        contentType: 'text',
+        segments: [{ type: 'text', content: '' }]
+      };
+    }
+
+    if (typeof serverResponse === 'object') {
+      const formattedJson = JSON.stringify(serverResponse, null, 2);
+      return {
+        formattedText: formattedJson,
+        contentType: 'json',
+        segments: [{ type: 'json', content: formattedJson }]
+      };
+    }
+
+    const responseText = String(serverResponse);
+    const jsonSegments = this.extractJsonSegmentsFromText(responseText);
+
+    if (jsonSegments.length > 0) {
+      return {
+        formattedText: jsonSegments.map(segment => segment.content).join('\n\n'),
+        contentType: jsonSegments.some(segment => segment.type === 'json') ? 'mixed' : 'text',
+        segments: jsonSegments
+      };
+    }
+
+    const formattedJson = this.formatJsonString(responseText);
+
+    if (formattedJson) {
+      return {
+        formattedText: formattedJson,
+        contentType: 'json',
+        segments: [{ type: 'json', content: formattedJson }]
+      };
+    }
+
+    return {
+      formattedText: responseText,
+      contentType: 'text',
+      segments: [{ type: 'text', content: responseText }]
+    };
+  }
+
+  extractJsonSegmentsFromText(text) {
+    const segments = [];
+    const regex = /```json\s*([\s\S]*?)```/gi;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      const preceding = text.slice(lastIndex, match.index).trim();
+      if (preceding) {
+        segments.push({ type: 'text', content: preceding });
+      }
+
+      const rawJson = (match[1] || '').trim();
+      if (rawJson) {
+        const formatted = this.formatJsonString(rawJson) || rawJson;
+        segments.push({ type: 'json', content: formatted });
+      }
+
+      lastIndex = regex.lastIndex;
+    }
+
+    const tail = text.slice(lastIndex).trim();
+    if (tail) {
+      segments.push({ type: 'text', content: tail });
+    }
+
+    return segments;
+  }
+
+  formatJsonString(rawText) {
+    if (!rawText) {
+      return null;
+    }
+
+    const trimmed = rawText.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      return JSON.stringify(parsed, null, 2);
+    } catch (error) {
+      return null;
     }
   }
 
@@ -331,7 +425,11 @@ const botMessage = {
 
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
-    bubble.textContent = message.text;
+    if (message.sender === 'bot') {
+      this.renderBotMessageContent(bubble, message);
+    } else {
+      bubble.textContent = message.text;
+    }
 
     const time = document.createElement('div');
     time.className = 'message-time';
@@ -350,6 +448,83 @@ const botMessage = {
 
     this.messagesArea.appendChild(messageGroup);
     this.scrollToBottom();
+  }
+
+  renderBotMessageContent(container, message) {
+    if (message.segments && message.segments.length > 0) {
+      message.segments.forEach(segment => {
+        if (segment.type === 'json') {
+          container.appendChild(this.buildJsonBlock(segment.content));
+        } else {
+          container.appendChild(this.buildTextSegment(segment.content));
+        }
+      });
+      return;
+    }
+
+    if (message.contentType === 'json') {
+      container.appendChild(this.buildJsonBlock(message.text));
+      return;
+    }
+
+    container.textContent = message.text;
+  }
+
+  buildTextSegment(text) {
+    const paragraph = document.createElement('p');
+    paragraph.className = 'message-paragraph';
+    paragraph.textContent = text;
+    return paragraph;
+  }
+
+  buildJsonBlock(jsonText) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'json-block';
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'json-toolbar';
+
+    const label = document.createElement('span');
+    label.textContent = 'Structured data';
+    toolbar.appendChild(label);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'json-copy-btn';
+    copyBtn.type = 'button';
+    copyBtn.textContent = 'Copy';
+    copyBtn.addEventListener('click', () => this.copyToClipboard(jsonText, copyBtn));
+    toolbar.appendChild(copyBtn);
+
+    const pre = document.createElement('pre');
+    pre.className = 'json-content';
+    pre.textContent = jsonText;
+
+    wrapper.appendChild(toolbar);
+    wrapper.appendChild(pre);
+
+    return wrapper;
+  }
+
+  copyToClipboard(text, triggerElement) {
+    if (!navigator?.clipboard) {
+      return;
+    }
+
+    navigator.clipboard.writeText(text).then(() => {
+      const previousText = triggerElement.textContent;
+      triggerElement.textContent = 'Copied!';
+      triggerElement.disabled = true;
+
+      setTimeout(() => {
+        triggerElement.textContent = previousText;
+        triggerElement.disabled = false;
+      }, 1500);
+    }).catch(() => {
+      triggerElement.textContent = 'Error';
+      setTimeout(() => {
+        triggerElement.textContent = 'Copy';
+      }, 1500);
+    });
   }
 
   showTypingIndicator() {
@@ -397,7 +572,9 @@ const botMessage = {
       id: this.generateId(),
       text: errorText || 'I apologize, but I encountered an error. Please try again.',
       sender: 'bot',
-      timestamp: new Date()
+      timestamp: new Date(),
+      contentType: 'text',
+      segments: [{ type: 'text', content: errorText || 'I apologize, but I encountered an error. Please try again.' }]
     };
     this.messages.push(errorMessage);
     this.displayMessage(errorMessage);
