@@ -244,10 +244,10 @@ class ChatApp {
       
       console.log('=== BOT RESPONSE DEBUG ===');
       console.log('User message:', userMessage);
-      console.log('Response object:', response);
+      console.log('Response object (preview):', this.buildResponsePreview(response));
       console.log('Response type:', typeof response);
       console.log('Response.success:', response.success);
-      console.log('Response.response:', response.response);
+      console.log('Response.response (preview):', this.buildResponsePreview(response?.response));
       console.log('========================');
       
       this.hideTypingIndicator();
@@ -267,33 +267,23 @@ class ChatApp {
         this.messages.push(botMessage);
         this.displayMessage(botMessage);
       } else {
-        // Use fallback response without logging error
-        const fallbackResponse = this.generateFallbackResponse(userMessage);
+        const { formattedText, contentType, segments } = this.prepareBotResponseContent(response.response);
+
         const botMessage = {
           id: this.generateId(),
-          text: fallbackResponse,
+          text: formattedText,
           sender: 'bot',
           timestamp: new Date(),
-          contentType: 'text',
-          segments: [{ type: 'text', content: fallbackResponse }]
+          contentType,
+          segments
         };
+
         this.messages.push(botMessage);
         this.displayMessage(botMessage);
       }
     } catch (error) {
       this.hideTypingIndicator();
-      // Fallback to local response
-      const fallbackResponse = this.generateFallbackResponse(userMessage);
-      const botMessage = {
-        id: this.generateId(),
-        text: fallbackResponse,
-        sender: 'bot',
-        timestamp: new Date(),
-        contentType: 'text',
-        segments: [{ type: 'text', content: fallbackResponse }]
-      };
-      this.messages.push(botMessage);
-      this.displayMessage(botMessage);
+      this.displayErrorMessage();
     }
   }
 
@@ -390,25 +380,29 @@ class ChatApp {
     }
   }
 
-  generateFallbackResponse(userMessage) {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return 'Hello! How can I assist you today?';
-    } else if (lowerMessage.includes('help')) {
-      return 'I\'m here to help! You can ask me about:\n- Project information\n- Contract details\n- General assistance\n\nFeel free to use the quick actions or type your question.';
-    } else if (lowerMessage.includes('project')) {
-      return 'I can help you with project-related questions. What specific information do you need about projects?';
-    } else if (lowerMessage.includes('contract')) {
-      return 'I can assist with contract information. Would you like to see all contracts or search for a specific one?';
-    } else if (lowerMessage.includes('all projects') || lowerMessage.includes('show projects')) {
-      return 'Here are all the projects:\n\n1. Project Alpha - Active\n2. Project Beta - Completed\n3. Project Gamma - In Progress\n\nWould you like more details about any specific project?';
-    } else if (lowerMessage.includes('all contracts') || lowerMessage.includes('show contracts')) {
-      return 'Here are all the contracts:\n\n1. Contract #001 - Active\n2. Contract #002 - Pending\n3. Contract #003 - Completed\n\nNeed information about a specific contract?';
-    } else {
-      return `I understand you're asking about "${userMessage}". While I'm currently in demo mode, I can help you with projects, contracts, and general information. Try using the quick actions or ask me specific questions!`;
+  buildResponsePreview(rawValue) {
+    if (rawValue === null || rawValue === undefined) {
+      return 'null';
     }
+
+    let text;
+    if (typeof rawValue === 'string') {
+      text = rawValue;
+    } else {
+      try {
+        text = JSON.stringify(rawValue);
+      } catch (error) {
+        text = String(rawValue);
+      }
+    }
+
+    if (text.length > 400) {
+      return `${text.slice(0, 400)}... [truncated]`;
+    }
+    return text;
   }
+
+  // Removed fallback generator to always display LLM replies
 
   displayMessage(message) {
     const messageGroup = document.createElement('div');
