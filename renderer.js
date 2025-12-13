@@ -485,7 +485,7 @@ class ChatApp {
     toolbar.className = 'json-toolbar';
 
     const label = document.createElement('span');
-    label.textContent = 'Structured data';
+    label.textContent = 'STRUCTURED DATA';
     toolbar.appendChild(label);
 
     const copyBtn = document.createElement('button');

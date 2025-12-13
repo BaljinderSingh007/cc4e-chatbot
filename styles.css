@@ -560,7 +560,9 @@ body {
   padding: 16px;
   font-size: 13px;
   line-height: 1.5;
+  max-height: 320px;
   overflow-x: auto;
+  overflow-y: auto;
   white-space: pre;
 }
 
