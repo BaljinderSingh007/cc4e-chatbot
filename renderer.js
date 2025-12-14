@@ -163,13 +163,13 @@ class ChatApp {
   handleInputChange() {
     const text = this.messageInput.value;
     const length = text.length;
-    this.charCount.textContent = `${length} / 2000`;
+    this.charCount.textContent = `${length} / 3000`;
     
     // Enable/disable send button
-    this.sendBtn.disabled = text.trim().length === 0 || length > 2000 || this.isTyping;
+    this.sendBtn.disabled = text.trim().length === 0 || length > 3000 || this.isTyping;
     
     // Change color if over limit
-    if (length > 2000) {
+    if (length > 3000) {
       this.charCount.style.color = '#ef4444';
     } else {
       this.charCount.style.color = 'var(--text-secondary)';
@@ -193,7 +193,7 @@ class ChatApp {
   async sendMessage(customMessage = null) {
     const messageText = customMessage || this.messageInput.value.trim();
     
-    if (!messageText || messageText.length > 2000) {
+    if (!messageText || messageText.length > 3000) {
       return;
     }
 

@@ -18,8 +18,8 @@ class ChatService {
         throw new Error('User message cannot be empty');
       }
 
-      if (userMessage.length > 2000) {
-        throw new Error('Message is too long. Please keep it under 2000 characters.');
+      if (userMessage.length > 3000) {
+        throw new Error('Message is too long. Please keep it under 3000 characters.');
       }
 
       const response = await axios.post(
